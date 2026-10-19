@@ -1,0 +1,58 @@
+{
+  "world_id": "misttide_isles",
+  "version": "v1",
+  "name": "雾潮群岛",
+  "summary": "雾潮群岛由潮汐灯塔维系航路，居民必须遵守潮门、守门人和回声贝的旧规矩。",
+  "characters": [
+    {
+      "character_id": "mira",
+      "name": "米拉",
+      "role": "潮汐抄录员",
+      "description": "米拉负责在灯塔港记录每天的潮声，并把记录交给航海者。"
+    },
+    {
+      "character_id": "oren",
+      "name": "奥伦",
+      "role": "北潮门守门人",
+      "description": "奥伦守护北潮门；只有确认来访者值得信任时，他才会透露门后的安全路线。"
+    }
+  ],
+  "locations": [
+    {
+      "location_id": "lantern_harbor",
+      "name": "灯塔港",
+      "description": "灯塔港是群岛居民交换潮汐记录和准备航行的集市。"
+    },
+    {
+      "location_id": "north_tide_gate",
+      "name": "北潮门",
+      "description": "北潮门是一座通往外海礁道的石门，门后航路会随潮汐改变。"
+    }
+  ],
+  "items": [
+    {
+      "item_id": "blue_salt_key",
+      "name": "蓝盐钥匙",
+      "description": "蓝盐钥匙是开启北潮门内锁的唯一钥匙。"
+    },
+    {
+      "item_id": "echo_shell",
+      "name": "回声贝",
+      "description": "回声贝能在灯塔港保存一次潮声，供抄录员核对记录。"
+    }
+  ],
+  "rules": [
+    {
+      "rule_id": "gate_requires_key",
+      "description": "北潮门只有在玩家持有蓝盐钥匙时才能开启。"
+    },
+    {
+      "rule_id": "keeper_reveals_route_at_trust_two",
+      "description": "守门人奥伦只有在玩家对他的信任等级至少为 2 时才会透露北潮门后的安全路线。"
+    },
+    {
+      "rule_id": "echo_shell_records_at_harbor",
+      "description": "回声贝只能在灯塔港新增潮声记录，离开灯塔港后不能新增记录。"
+    }
+  ]
+}

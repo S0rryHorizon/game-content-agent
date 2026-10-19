@@ -1,0 +1,35 @@
+{
+  "version": "rules-v1",
+  "world_version": "v1",
+  "action_targets": {
+    "talk": "characters",
+    "open_gate": "locations",
+    "reveal_route": "characters",
+    "record_tide": "items"
+  },
+  "allowed_action_targets": {
+    "open_gate": ["north_tide_gate"],
+    "reveal_route": ["oren"],
+    "record_tide": ["echo_shell"]
+  },
+  "action_requirements": [
+    {
+      "rule_id": "gate_requires_key",
+      "kind": "open_gate",
+      "target_id": "north_tide_gate",
+      "conditions": [{"kind": "has_item", "entity_id": "blue_salt_key", "value": 1}]
+    },
+    {
+      "rule_id": "keeper_reveals_route_at_trust_two",
+      "kind": "reveal_route",
+      "target_id": "oren",
+      "conditions": [{"kind": "trust_at_least", "entity_id": "oren", "value": 2}]
+    },
+    {
+      "rule_id": "echo_shell_records_at_harbor",
+      "kind": "record_tide",
+      "target_id": "echo_shell",
+      "conditions": [{"kind": "at_location", "entity_id": "lantern_harbor", "value": 1}]
+    }
+  ]
+}

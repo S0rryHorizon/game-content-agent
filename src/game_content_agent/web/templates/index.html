@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>雾潮群岛 · 任务策划台</title>
+  <link rel="stylesheet" href="/static/styles.css?v={{ asset_versions['styles.css'] }}">
+  <script src="/static/app.js?v={{ asset_versions['app.js'] }}" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">≈</span>
+        <div>
+          <p class="eyebrow">MISTTIDE / LOCAL STUDIO</p>
+          <h1>雾潮群岛 <span>任务策划台</span></h1>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="local-badge"><span class="status-dot"></span> 本地工作台</span>
+        <button class="button button-quiet" id="new-session" type="button">新建策划</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="panel brief-panel" aria-labelledby="brief-heading">
+        <div class="panel-heading">
+          <div><span class="step-index">01 / 需求</span><h2 id="brief-heading">先说清楚要设计什么</h2></div>
+          <span id="brief-status" class="pill muted">待确认</span>
+        </div>
+        <p class="intro">整理目标和必须保留的内容。生成任务只使用你明确确认过的需求。</p>
+        <label class="field-label" for="goal-input">设计要求</label>
+        <textarea id="goal-input" class="text-area goal-input" rows="6" placeholder="例如：围绕北潮门设计一份有两处分支的任务，保留……"></textarea>
+        <div class="prompt-presets"><button id="use-goal-example" class="text-button" type="button">填入正常示例</button><button id="use-conflict-example" class="text-button" type="button">填入冲突示例</button></div>
+        <p class="field-help" id="prompt-help">Fake 模式仅覆盖页面给出的示例脚本；其他输入可能需要你进一步决定。</p>
+
+        <div class="setting-row">
+          <label class="field-label" for="mode-select">运行模式</label>
+          <select id="mode-select" class="select"><option value="fake">Fake 演示</option><option value="live">真实模型</option></select>
+        </div>
+        <div id="live-capability" class="capability-note" role="status"></div>
+        <div class="setting-row" id="scenario-row">
+          <label class="field-label" for="scenario-select">Fake 脚本</label>
+          <select id="scenario-select" class="select">
+            <option value="normal">正常生成</option>
+            <option value="conflict">核心目标冲突</option>
+            <option value="invalid_entity">未知实体</option>
+            <option value="invalid_citation">引用错误</option>
+            <option value="invalid_graph">任务图错误</option>
+            <option value="missing_condition">动作条件缺失</option>
+            <option value="tool_failure">工具失败</option>
+            <option value="loop_limit">步骤上限</option>
+            <option value="provider_error">模型服务错误</option>
+            <option value="repair_format">格式修复</option>
+          </select>
+        </div>
+        <p class="script-note" id="script-note">当前是明确标注的 Fake 脚本演示，结果不代表任意自然语言都已理解。</p>
+        <button id="prepare-brief" class="button button-primary full-width" type="button">整理需求摘要</button>
+        <p id="brief-action-help" class="inline-help"></p>
+
+        <div class="section-divider"></div>
+        <div class="section-title-row"><h3>待确认摘要</h3><span id="brief-version" class="mono muted-text">—</span></div>
+        <div id="brief-empty" class="empty-block">整理要求后，这里会显示目标、保留项和结构约束。</div>
+        <div id="brief-content" hidden>
+          <div class="brief-summary"><span class="small-label">核心目标</span><p id="brief-goal"></p></div>
+          <div class="brief-summary"><span class="small-label">必须保留</span><ul id="brief-must-keep" class="compact-list"></ul></div>
+          <div class="brief-summary"><span class="small-label">明确约束</span><ul id="brief-constraints" class="compact-list"></ul></div>
+          <button id="confirm-brief" class="button button-secondary full-width" type="button">确认当前摘要</button>
+          <p class="inline-help">目标或保留项有变化时，修改上方要求并重新整理、确认。</p>
+        </div>
+        <details class="state-details">
+          <summary>初始状态快照 <span class="tiny-tag">只读</span></summary>
+          <div id="state-snapshot" class="state-snapshot">正在读取世界与状态…</div>
+        </details>
+      </section>
+
+      <section class="panel canvas-panel" aria-labelledby="candidate-heading">
+        <div class="panel-heading canvas-heading">
+          <div><span class="step-index">02 / 候选</span><h2 id="candidate-heading">任务设计</h2></div>
+          <span id="candidate-status" class="pill muted">尚无候选</span>
+        </div>
+        <div class="canvas-toolbar">
+          <div class="version-select-wrap">
+            <label class="field-label" for="version-select">查看版本</label>
+            <select id="version-select" class="select" disabled><option>暂无版本</option></select>
+          </div>
+          <div class="toolbar-meta" id="version-meta">一份策划 · 多个版本</div>
+        </div>
+        <div id="decision-panel" class="decision-panel" hidden>
+          <span class="small-label">需要你决定</span>
+          <h3>当前要求需要澄清</h3>
+          <p id="decision-message"></p>
+          <ul id="decision-options" class="compact-list"></ul>
+          <p>请修改左侧设计要求，再次整理并确认摘要。</p>
+        </div>
+        <div id="candidate-empty" class="hero-empty">
+          <div class="empty-illustration" aria-hidden="true"><i></i><i></i><i></i></div>
+          <h3>从一份确认过的要求开始</h3>
+          <p>候选任务会在这里呈现为可读的流程图和节点正文。</p>
+        </div>
+        <div id="candidate-content" hidden>
+          <div class="candidate-title-row">
+            <div><span class="small-label">当前查看的设计版本</span><h3 id="quest-title"></h3><p id="quest-summary"></p></div>
+            <span id="node-count" class="count-badge"></span>
+          </div>
+          <div class="graph-header"><h4>任务路径</h4><span>可横向滚动 · 点击节点定位正文</span></div>
+          <div class="graph-frame"><svg id="quest-graph" role="img" aria-label="任务节点和分支路径图"></svg></div>
+          <div class="section-title-row content-heading"><h4>节点正文</h4><span id="edge-count" class="muted-text"></span></div>
+          <div id="node-list" class="node-list"></div>
+          <details class="source-details"><summary>引用设定</summary><ul id="citation-list" class="compact-list"></ul></details>
+        </div>
+        <div class="revision-box">
+          <div class="section-title-row"><h3>自然语言修改</h3><span class="tiny-tag">产生新版本</span></div>
+          <label class="sr-only" for="revision-input">修改要求</label>
+          <textarea id="revision-input" class="text-area" rows="3" placeholder="例如：保留结局，把第二个分支改成帮助米拉"></textarea>
+          <div class="revision-actions">
+            <button id="use-revision-example" class="text-button" type="button">填入示例句</button>
+            <button id="run-revision" class="button button-secondary" type="button">生成修订版</button>
+          </div>
+          <p id="revision-help" class="inline-help">修订保留已确认目标与保留项；识别到冲突时会请你决定，文字要求仍需人工核对。</p>
+        </div>
+      </section>
+
+      <aside class="panel review-panel" aria-labelledby="review-heading">
+        <div class="panel-heading">
+          <div><span class="step-index">03 / 检查与审核</span><h2 id="review-heading">核对后再采纳</h2></div>
+        </div>
+        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <div class="run-card">
+          <div class="section-title-row"><h3>运行状态</h3><span id="run-status" class="pill muted">空闲</span></div>
+          <p id="run-message" class="muted-text">等待整理需求。</p>
+          <div id="run-progress" class="progress-track" hidden><span></span></div>
+          <button id="run-generate" class="button button-primary full-width" type="button">生成任务候选</button>
+          <p id="generate-help" class="inline-help">先确认左侧需求摘要。</p>
+        </div>
+        <div class="section-divider"></div>
+        <div class="section-title-row"><h3>静态检查</h3><span id="report-status" class="pill muted">待运行</span></div>
+        <div id="report-empty" class="empty-block">候选生成后显示结构、引用及已编码规则的检查结果。</div>
+        <div id="report-content" hidden>
+          <p class="report-summary" id="report-summary"></p>
+          <ul id="finding-list" class="finding-list"></ul>
+          <div class="manual-box"><span class="small-label">仍需人工判断</span><ul id="manual-list" class="compact-list"></ul></div>
+        </div>
+        <p class="scope-note">检查的是静态结构、实体引用和已编码动作条件；可达路径不等于玩家实际可完成，引用正确也不等于对白语义正确。</p>
+        <div class="section-divider"></div>
+        <div class="section-title-row"><h3>版本差异</h3><span id="diff-count" class="mono muted-text">—</span></div>
+        <div id="diff-content" class="diff-list"><p class="muted-text">选择修订版本后查看差异。</p></div>
+        <div class="section-divider"></div>
+        <div class="section-title-row"><h3>人工审核</h3><span id="review-status" class="pill muted">未审核</span></div>
+        <p id="review-help" class="inline-help">审核精确绑定当前版本与内容摘要。只可审核最新且符合当前已确认需求的候选。</p>
+        <label class="field-label" for="review-reason">审核理由</label>
+        <textarea id="review-reason" class="text-area reason-input" rows="2" placeholder="记录采纳或拒绝的原因"></textarea>
+        <div class="review-actions">
+          <button id="reject-version" class="button button-quiet" type="button">拒绝</button>
+          <button id="accept-version" class="button button-primary" type="button">采纳此版</button>
+        </div>
+        <div class="export-actions">
+          <button id="export-json" class="text-button" type="button">导出 JSON ↓</button>
+          <button id="export-markdown" class="text-button" type="button">导出 Markdown ↓</button>
+        </div>
+        <div class="section-divider"></div>
+        <details class="replay-section" open>
+          <summary>执行记录回放 <span id="run-count" class="mono muted-text">0 次</span></summary>
+          <p class="inline-help">调用失败时，费用可能仍待确认。记录会区分已知用量与未结算预留；预留金额用于控制预算，并非实际账单。</p>
+          <div id="run-list" class="run-list"></div>
+          <div id="replay-empty" class="empty-block">选择一次运行，查看公开输入、工具调用与结果。</div>
+          <ol id="replay-list" class="replay-list" hidden></ol>
+        </details>
+      </aside>
+    </main>
+    <footer class="footer"><span id="session-label">尚未创建会话</span><span>本地设计与审核 · 游戏状态只读</span></footer>
+  </div>
+</body>
+</html>

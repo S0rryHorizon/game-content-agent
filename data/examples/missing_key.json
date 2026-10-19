@@ -1,0 +1,25 @@
+{
+  "title": "潮门前的回声",
+  "summary": "在灯塔港核对潮声，向奥伦确认航路，再用蓝盐钥匙开启北潮门。",
+  "entry_node": "harbor_start",
+  "nodes": [
+    {"node_id": "harbor_start", "title": "灯塔港的委托", "text": "米拉请你核对回声贝中保存的潮声。", "location_id": "lantern_harbor", "character_ids": ["mira"], "item_ids": ["echo_shell"], "actions": [{"kind": "talk", "target_id": "mira", "conditions": []}], "effects": [], "ending": null},
+    {"node_id": "record_tide", "title": "核对潮声", "text": "在灯塔港用回声贝记录一次新的潮声。", "location_id": "lantern_harbor", "character_ids": ["mira"], "item_ids": ["echo_shell"], "actions": [{"kind": "record_tide", "target_id": "echo_shell", "conditions": [{"kind": "at_location", "entity_id": "lantern_harbor", "value": 1}]}], "effects": ["取得米拉核对的潮声记录"], "ending": null},
+    {"node_id": "seek_key", "title": "寻找钥匙", "text": "查看蓝盐钥匙的线索，准备前往北潮门。", "location_id": "lantern_harbor", "character_ids": [], "item_ids": ["blue_salt_key"], "actions": [], "effects": ["追查蓝盐钥匙的去向"], "ending": null},
+    {"node_id": "gate", "title": "北潮门", "text": "奥伦确认信任后透露安全路线；持有蓝盐钥匙才能开门。", "location_id": "north_tide_gate", "character_ids": ["oren"], "item_ids": ["blue_salt_key"], "actions": [{"kind": "reveal_route", "target_id": "oren", "conditions": [{"kind": "trust_at_least", "entity_id": "oren", "value": 2}]}, {"kind": "open_gate", "target_id": "north_tide_gate", "conditions": []}], "effects": ["得知安全路线"], "ending": null},
+    {"node_id": "safe_route", "title": "安全航路", "text": "沿着确认过的航路离开北潮门。", "location_id": "north_tide_gate", "character_ids": [], "item_ids": [], "actions": [], "effects": [], "ending": "安全启航"}
+  ],
+  "edges": [
+    {"source": "harbor_start", "target": "record_tide", "label": "先核对潮声"},
+    {"source": "harbor_start", "target": "seek_key", "label": "先追查钥匙"},
+    {"source": "record_tide", "target": "gate", "label": "前往北潮门"},
+    {"source": "seek_key", "target": "gate", "label": "携线索前往北潮门"},
+    {"source": "gate", "target": "safe_route", "label": "确认路线并开启潮门"}
+  ],
+  "citations": [
+    {"lore_id": "lore-rule-gate-key-v1", "world_version": "v1"},
+    {"lore_id": "lore-rule-keeper-trust-v1", "world_version": "v1"},
+    {"lore_id": "lore-rule-shell-harbor-v1", "world_version": "v1"},
+    {"lore_id": "lore-character-mira-v1", "world_version": "v1"}
+  ]
+}

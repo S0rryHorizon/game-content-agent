@@ -1,0 +1,33 @@
+{
+  "state_id": "state-v1-001",
+  "world_version": "v1",
+  "version": 1,
+  "player": {
+    "player_id": "player-001",
+    "location_id": "lantern_harbor",
+    "coins": 8
+  },
+  "inventory": [
+    {
+      "item_id": "echo_shell",
+      "quantity": 1
+    }
+  ],
+  "quests": [
+    {
+      "quest_id": "find_blue_salt_key",
+      "status": "not_started",
+      "prerequisites": []
+    }
+  ],
+  "npcs": [
+    {
+      "npc_id": "mira",
+      "trust_level": 0
+    },
+    {
+      "npc_id": "oren",
+      "trust_level": 1
+    }
+  ]
+}

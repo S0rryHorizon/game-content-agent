@@ -1,0 +1,9 @@
+from typing import Any, Protocol
+
+
+class ModelGateway(Protocol):
+    async def next_turn(self) -> dict[str, Any]: ...
+
+    def observe(self, call_id: str, observation: dict[str, Any]) -> None: ...
+
+    async def close(self) -> None: ...
