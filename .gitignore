@@ -29,3 +29,14 @@ data/runtime/*
 *.sqlite3-shm
 *.pem
 *.key
+
+# Local-only workspace: internal notes, plans, migration records and Git backups.
+# These files stay on this computer and must never be force-added or pushed.
+/private/
+*.bundle
+
+# Defensive exclusions if internal documents are copied back to the root.
+/CONTEXT.md
+/docs/
+/主项目导师式执行手册.md
+/主项目导师式执行计划.xlsx
