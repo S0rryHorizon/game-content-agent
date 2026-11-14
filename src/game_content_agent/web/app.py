@@ -202,9 +202,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     @app.get("/candidates/{candidate_id}/versions/{version}/export")
-    def export(
-        candidate_id: str, version: int, format: Literal["json", "markdown"]
-    ):
+    def export(candidate_id: str, version: int, format: Literal["json", "markdown"]):
         content, media_type, filename = current_service().export(
             candidate_id, version, format
         )
