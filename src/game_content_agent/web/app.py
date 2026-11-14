@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -149,20 +150,23 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/api/world")
-    async def world():
+    def world():
         return current_service().world_info()
 
     @app.post("/sessions", status_code=201)
-    async def create_session(body: SessionBody):
+    def create_session(body: SessionBody):
         return current_service().create_session(body.world_version)
 
     @app.get("/sessions/{session_id}")
-    async def get_session(session_id: str):
+    def get_session(session_id: str):
         return current_service().get_session(session_id)
 
     @app.post("/sessions/{session_id}/runs", status_code=202)
     async def start_run(session_id: str, body: RunBody):
-        result = current_service().start_run(
+        # Stays async to schedule the run on the event loop; the blocking part runs
+        # in the threadpool like the plain `def` routes below.
+        result = await run_in_threadpool(
+            current_service().start_run,
             session_id,
             body.purpose,
             body.instruction,
@@ -176,29 +180,29 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return result
 
     @app.get("/runs/{run_id}")
-    async def get_run(run_id: str):
+    def get_run(run_id: str):
         return current_service().get_run(run_id)
 
     @app.get("/runs/{run_id}/replay")
-    async def replay(run_id: str):
+    def replay(run_id: str):
         return current_service().get_replay(run_id)
 
     @app.post("/sessions/{session_id}/brief/confirm")
-    async def confirm_brief(session_id: str, body: ConfirmBody):
+    def confirm_brief(session_id: str, body: ConfirmBody):
         return current_service().confirm_brief(session_id, body.version)
 
     @app.get("/candidates/{candidate_id}/versions/{version}")
-    async def candidate_version(candidate_id: str, version: int):
+    def candidate_version(candidate_id: str, version: int):
         return current_service().get_candidate_version(candidate_id, version)
 
     @app.post("/candidates/{candidate_id}/versions/{version}/review")
-    async def review(candidate_id: str, version: int, body: ReviewBody):
+    def review(candidate_id: str, version: int, body: ReviewBody):
         return current_service().review(
             candidate_id, version, body.decision, body.reason, body.content_hash
         )
 
     @app.get("/candidates/{candidate_id}/versions/{version}/export")
-    async def export(
+    def export(
         candidate_id: str, version: int, format: Literal["json", "markdown"]
     ):
         content, media_type, filename = current_service().export(

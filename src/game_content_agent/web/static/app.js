@@ -263,8 +263,9 @@
   async function loadVersion(number) {
     if (!state.session || !state.session.candidate_id || !number) return;
     try {
-      const detail = await api(`/candidates/${encodeURIComponent(state.session.candidate_id)}/versions/${number}`);
-      if (state.selectedVersion !== number) return;
+      const candidateId = state.session.candidate_id;
+      const detail = await api(`/candidates/${encodeURIComponent(candidateId)}/versions/${number}`);
+      if (!state.session || state.session.candidate_id !== candidateId || state.selectedVersion !== number) return;
       state.detail = detail;
       renderCandidate();
       renderReport();
