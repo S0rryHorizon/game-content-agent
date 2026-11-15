@@ -84,6 +84,12 @@ class Repository:
         finally:
             connection.close()
 
+    @contextmanager
+    def read_snapshot(self) -> Iterator[sqlite3.Connection]:
+        with self.read() as connection:
+            connection.execute("BEGIN DEFERRED")
+            yield connection
+
     def initialize(self, interrupted_at: str) -> None:
         with self.transaction() as db:
             db.executescript("""
@@ -160,7 +166,7 @@ class Repository:
         return self.get_session(session_id)
 
     def get_session(self, session_id: str) -> dict:
-        with self.read() as db:
+        with self.read_snapshot() as db:
             row = db.execute(
                 "SELECT * FROM sessions WHERE session_id=?", (session_id,)
             ).fetchone()
@@ -304,7 +310,7 @@ class Repository:
             )
 
     def get_events(self, run_id: str) -> list[dict]:
-        with self.read() as db:
+        with self.read_snapshot() as db:
             if not db.execute(
                 "SELECT 1 FROM runs WHERE run_id=?", (run_id,)
             ).fetchone():

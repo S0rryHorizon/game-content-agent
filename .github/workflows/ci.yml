@@ -38,3 +38,4 @@ jobs:
           uv run --no-sync ruff format --check src tests
           uv run --no-sync pyright
           node tests/integration/graph_layout.test.cjs
+          node tests/integration/app_races.test.cjs

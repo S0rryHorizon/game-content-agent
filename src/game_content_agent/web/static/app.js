@@ -15,6 +15,13 @@
     lastRun: null,
   };
   const STORAGE_KEY = "misttide-planner-session";
+  let sessionGeneration = 0;
+  const requestIds = { session: 0, version: 0, replay: 0, poll: 0 };
+  function latestRequest(kind) {
+    const generation = sessionGeneration;
+    const requestId = ++requestIds[kind];
+    return () => generation === sessionGeneration && requestId === requestIds[kind];
+  }
   const purposeNames = { prepare_brief: "需求摘要", generate: "生成候选", revise: "修订版本" };
   const scenarioNames = {
     normal: "正常生成", conflict: "核心目标冲突", invalid_entity: "未知实体",
@@ -262,16 +269,20 @@
   }
   async function loadVersion(number) {
     if (!state.session || !state.session.candidate_id || !number) return;
+    const currentRequest = latestRequest("version");
+    const candidateId = state.session.candidate_id;
+    const isCurrent = () => currentRequest() && state.session
+      && state.session.candidate_id === candidateId && state.selectedVersion === number;
     try {
-      const candidateId = state.session.candidate_id;
       const detail = await api(`/candidates/${encodeURIComponent(candidateId)}/versions/${number}`);
-      if (!state.session || state.session.candidate_id !== candidateId || state.selectedVersion !== number) return;
+      if (!isCurrent()) return;
       state.detail = detail;
       renderCandidate();
       renderReport();
       renderDiff();
       renderReviewActions();
     } catch (error) {
+      if (!isCurrent()) return;
       notice("读取版本失败：" + errorMessage(error) + " 可重新选择版本再试。", "error");
     }
   }
@@ -480,11 +491,13 @@
   }
   async function selectRun(runId) {
     if (!runId) return;
+    const currentRequest = latestRequest("replay");
+    const isCurrent = () => currentRequest() && state.selectedRunId === runId;
     state.selectedRunId = runId;
     renderRuns();
     try {
       const replay = await api(`/runs/${encodeURIComponent(runId)}/replay`);
-      if (state.selectedRunId !== runId) return;
+      if (!isCurrent()) return;
       const events = Array.isArray(replay.events) ? replay.events : [];
       const parent = $("replay-list");
       clear(parent);
@@ -507,6 +520,7 @@
       }
       return events;
     } catch (error) {
+      if (!isCurrent()) return;
       notice("读取执行记录失败：" + errorMessage(error), "error");
       return [];
     }
@@ -538,6 +552,7 @@
   }
   async function ensureSession() {
     if (state.session) return;
+    sessionGeneration += 1;
     const session = await post("/sessions", {});
     localStorage.setItem(STORAGE_KEY, session.session_id);
     state.session = { ...session, versions: [], runs: [] };
@@ -545,7 +560,17 @@
   }
   async function refreshSession(selectLatest = false) {
     if (!state.session) return;
-    const fresh = await api(`/sessions/${encodeURIComponent(state.session.session_id)}`);
+    const currentRequest = latestRequest("session");
+    const sessionId = state.session.session_id;
+    const isCurrent = () => currentRequest() && state.session && state.session.session_id === sessionId;
+    let fresh;
+    try {
+      fresh = await api(`/sessions/${encodeURIComponent(sessionId)}`);
+    } catch (error) {
+      if (!isCurrent()) return;
+      throw error;
+    }
+    if (!isCurrent()) return;
     state.session = fresh;
     localStorage.setItem(STORAGE_KEY, fresh.session_id);
     setText("session-label", `会话 ${fresh.session_id} · 世界 ${fresh.world_version} · 初始状态只读`);
@@ -565,26 +590,31 @@
   }
   function setBusy(value) { state.busy = value; renderActions(); }
   async function pollRun(runId) {
+    const currentRequest = latestRequest("poll");
+    const isCurrent = () => currentRequest() && state.activeRunId === runId;
     let errors = 0;
     let polls = 0;
-    while (state.activeRunId === runId) {
+    while (isCurrent()) {
       try {
         const run = await api(`/runs/${encodeURIComponent(runId)}`);
+        if (!isCurrent()) return;
         state.lastRun = run;
         renderRun(run);
-        errors = 0;
         polls += 1;
         if (run.status === "running" && (polls === 1 || polls % 2 === 0)) {
           const events = await selectRun(runId);
+          if (!isCurrent()) return;
           const last = events && events[events.length - 1];
           if (last) setText("run-message", last.message || `${last.tool_name || last.kind || "运行"} · 步骤 ${last.step_number || "—"}`);
         }
         if (run.status !== "running" && run.status !== "queued") {
-          state.activeRunId = null;
-          setBusy(false);
           await refreshSession(run.purpose !== "prepare_brief");
+          if (!isCurrent()) return;
           renderDecision(run);
           await selectRun(runId);
+          if (!isCurrent()) return;
+          state.activeRunId = null;
+          setBusy(false);
           if (run.status === "failed" || run.status === "interrupted") {
             notice(`${run.message || "运行未完成。"} 可检查回放后重新发起。`, "error");
           } else if (run.status === "needs_decision" || run.result && run.result.status === "needs_decision") {
@@ -595,7 +625,9 @@
           }
           return;
         }
+        errors = 0;
       } catch (error) {
+        if (!isCurrent()) return;
         errors += 1;
         if (errors >= 3) {
           state.activeRunId = null;
@@ -699,6 +731,7 @@
   }
   async function newSession() {
     if (state.busy) return;
+    sessionGeneration += 1;
     try {
       setBusy(true);
       const session = await post("/sessions", {});
@@ -726,17 +759,21 @@
   async function restoreSession() {
     const savedId = localStorage.getItem(STORAGE_KEY);
     if (!savedId) return;
+    const generation = ++sessionGeneration;
     try {
       state.session = { session_id: savedId };
       await refreshSession(true);
+      if (generation !== sessionGeneration) return;
       const runs = Array.isArray(state.session.runs) ? state.session.runs : [];
       const latest = runs[runs.length - 1];
       if (latest && latest.run_id) {
         const run = await api(`/runs/${encodeURIComponent(latest.run_id)}`);
+        if (generation !== sessionGeneration) return;
         state.lastRun = run;
         renderRun(run);
         renderDecision(run);
         await selectRun(run.run_id);
+        if (generation !== sessionGeneration) return;
         if (run.status === "running") {
           state.activeRunId = run.run_id;
           setBusy(true);
@@ -744,6 +781,8 @@
         }
       }
     } catch (error) {
+      if (generation !== sessionGeneration) return;
+      sessionGeneration += 1;
       state.session = null;
       localStorage.removeItem(STORAGE_KEY);
       setText("session-label", "尚未创建会话");
