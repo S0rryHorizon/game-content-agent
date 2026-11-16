@@ -126,12 +126,13 @@ for (const outcome of ["success", "failure"]) {
     const h = harness();
     h.state.activeRunId = "r1";
     h.state.busy = true;
+    h.$("run-status").textContent = "运行中";
     const pending = h.pollRun("r1");
     h.state.activeRunId = "r2";
     if (outcome === "failure") h.requests[0].reject(new Error("old poll failed"));
     else h.requests[0].resolve(run("r1"));
     await pending;
-    assert.equal(h.state.lastRun, null);
+    assert.equal(h.$("run-status").textContent, "运行中");
     assert.equal(h.state.activeRunId, "r2");
     assert.equal(h.state.busy, true);
     assert.equal(h.requests.length, 1);
@@ -206,7 +207,7 @@ test("overlapping polls for the same run cannot regress status", async () => {
   await flush();
   h.requests[0].resolve(run("r1", "running"));
   await old;
-  assert.equal(h.state.lastRun.status, "succeeded");
+  assert.equal(h.$("run-status").textContent, "已完成");
   assert.equal(h.requests.length, 3);
   h.requests[2].resolve(session("A"));
   await flush();

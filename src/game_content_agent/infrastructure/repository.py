@@ -195,20 +195,6 @@ class Repository:
             "runs": [dict(item) for item in runs],
         }
 
-    def get_brief(self, session_id: str, version: int | None = None) -> dict | None:
-        with self.read() as db:
-            if version is None:
-                row = db.execute(
-                    "SELECT payload_json,confirmed FROM briefs WHERE session_id=? ORDER BY version DESC LIMIT 1",
-                    (session_id,),
-                ).fetchone()
-            else:
-                row = db.execute(
-                    "SELECT payload_json,confirmed FROM briefs WHERE session_id=? AND version=?",
-                    (session_id, version),
-                ).fetchone()
-        return _brief(row)
-
     def confirm_brief(self, session_id: str, version: int) -> dict:
         with self.transaction() as db:
             row = db.execute(

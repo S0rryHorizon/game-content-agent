@@ -12,7 +12,6 @@
     activeRunId: null,
     busy: false,
     decisionPending: false,
-    lastRun: null,
   };
   const STORAGE_KEY = "misttide-planner-session";
   let sessionGeneration = 0;
@@ -598,7 +597,6 @@
       try {
         const run = await api(`/runs/${encodeURIComponent(runId)}`);
         if (!isCurrent()) return;
-        state.lastRun = run;
         renderRun(run);
         polls += 1;
         if (run.status === "running" && (polls === 1 || polls % 2 === 0)) {
@@ -740,7 +738,6 @@
       state.selectedVersion = null;
       state.selectedRunId = null;
       state.decisionPending = false;
-      state.lastRun = null;
       localStorage.setItem(STORAGE_KEY, session.session_id);
       $("decision-panel").hidden = true;
       $("revision-input").value = "";
@@ -769,7 +766,6 @@
       if (latest && latest.run_id) {
         const run = await api(`/runs/${encodeURIComponent(latest.run_id)}`);
         if (generation !== sessionGeneration) return;
-        state.lastRun = run;
         renderRun(run);
         renderDecision(run);
         await selectRun(run.run_id);
